@@ -107,13 +107,15 @@ class FlappyGame:
         # Background
         self.screen.fill(self.SKY_BLUE)
         
-        # Draw clouds (simple circles)
+        # Draw clouds (moving backwards - to the left)
+        current_time = pygame.time.get_ticks()
+        cloud_speed = 0.5  # Slower speed for background clouds
+        
         for i in range(3):
-            x = (pygame.time.get_ticks() // 50 + i * 150) % (self.SCREEN_WIDTH + 100) - 50
+            # Clouds move left (backwards) by subtracting from x position
+            x = (-current_time // 80 + i * 200) % (self.SCREEN_WIDTH + 200) - 100
             y = 80 + i * 60
-            pygame.draw.circle(self.screen, self.WHITE, (x, y), 30)
-            pygame.draw.circle(self.screen, self.WHITE, (x + 20, y - 10), 25)
-            pygame.draw.circle(self.screen, self.WHITE, (x + 40, y), 30)
+            self.draw_cloud(x, y)
         
         # Draw pipes
         self.pipe_manager.draw(self.screen)
@@ -156,6 +158,13 @@ class FlappyGame:
                                           self.SCREEN_HEIGHT // 2 + 40))
         
         pygame.display.flip()
+    
+    def draw_cloud(self, x, y):
+        """Draw a single cloud at position (x, y)"""
+        pygame.draw.circle(self.screen, self.WHITE, (x, y), 20)
+        pygame.draw.circle(self.screen, self.WHITE, (x + 15, y - 10), 18)
+        pygame.draw.circle(self.screen, self.WHITE, (x + 30, y), 20)
+        pygame.draw.circle(self.screen, self.WHITE, (x + 15, y + 10), 15)
         
     def reset_game(self):
         """Reset game to initial state"""

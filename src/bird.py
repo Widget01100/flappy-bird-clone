@@ -13,6 +13,11 @@ class Bird:
         self.rotation = 0
         self.flap_animation = 0
         
+        # Smoother physics parameters
+        self.glide_factor = 0.95  # How much the bird glides (0.9-0.99)
+        self.min_velocity = -10   # Maximum upward speed
+        self.max_velocity = 12    # Maximum downward speed
+        
         # Bird colors
         self.body_color = (255, 255, 0)  # Yellow
         self.beak_color = (255, 165, 0)  # Orange
@@ -22,24 +27,37 @@ class Bird:
     def flap(self, strength):
         """Make the bird flap (jump)"""
         self.velocity = strength
-        self.flap_animation = 5
+        self.flap_animation = 8  # Longer flap animation
         
     def update(self, gravity):
-        """Update bird position and physics"""
+        """Update bird position and physics with smoother gliding"""
+        # Apply gravity
         self.velocity += gravity
+        
+        # Add gliding effect - reduce velocity changes for smoother movement
+        self.velocity *= self.glide_factor
+        
+        # Clamp velocity to reasonable limits
+        self.velocity = max(self.min_velocity, min(self.max_velocity, self.velocity))
+        
+        # Update position
         self.y += self.velocity
         
-        # Calculate rotation based on velocity
-        self.rotation = max(-30, min(90, -self.velocity * 3))
+        # Calculate rotation based on velocity - smoother rotation
+        target_rotation = -self.velocity * 2.5  # Less extreme rotation
+        # Smoothly interpolate towards target rotation
+        self.rotation = self.rotation * 0.8 + target_rotation * 0.2
+        # Clamp rotation
+        self.rotation = max(-25, min(70, self.rotation))
         
         # Update flap animation
         if self.flap_animation > 0:
             self.flap_animation -= 1
             
-        # Keep bird on screen
+        # Keep bird on screen (ceiling)
         if self.y - self.radius < 0:
             self.y = self.radius
-            self.velocity = 0
+            self.velocity = max(0, self.velocity)  # Don't bounce, just stop
             
     def check_ground_collision(self):
         """Check if bird hit the ground"""
@@ -54,12 +72,18 @@ class Bird:
         pygame.draw.circle(bird_surface, self.body_color, 
                          (self.radius * 2, self.radius * 2), self.radius)
         
-        # Draw wing (animated)
-        wing_offset = math.sin(pygame.time.get_ticks() / 200) * 2 if self.flap_animation == 0 else 3
+        # Draw wing (animated with flapping)
+        if self.flap_animation > 0:
+            # Flapping animation - wing goes up
+            wing_y_offset = -self.flap_animation
+        else:
+            # Gliding animation - gentle wing movement
+            wing_y_offset = math.sin(pygame.time.get_ticks() / 300) * 3
+            
         wing_points = [
             (self.radius * 2 - 10, self.radius * 2),
-            (self.radius * 2 - 20, self.radius * 2 - wing_offset),
-            (self.radius * 2 - 10, self.radius * 2 - 5)
+            (self.radius * 2 - 22, self.radius * 2 + wing_y_offset),
+            (self.radius * 2 - 10, self.radius * 2 - 3)
         ]
         pygame.draw.polygon(bird_surface, self.wing_color, wing_points)
         
